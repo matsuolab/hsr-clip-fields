@@ -220,6 +220,9 @@ class DeticDenseLabelledDataset(Dataset):
                 continue
             rgb = einops.rearrange(data_dict["rgb"][..., :3], "b h w c -> b c h w")
             xyz = data_dict["xyz_position"]
+            
+            print(rgb.shape)
+            print(xyz.shape)
             for image, coordinates in zip(rgb, xyz):
                 # Now calculate the Detic classification for this.
                 with torch.no_grad():
@@ -260,6 +263,8 @@ class DeticDenseLabelledDataset(Dataset):
                     real_mask = pred_mask[valid_mask]
                     real_mask_rect = valid_mask & pred_mask
                     # Go over each instance and add it to the DB.
+                    print(real_mask.shape)
+                    print(reshaped_coordinates.shape)
                     total_points = len(reshaped_coordinates[real_mask])
                     resampled_indices = torch.rand(total_points) < self._subsample_prob
                     self._label_xyz.append(
@@ -413,7 +418,7 @@ class DeticDenseLabelledDataset(Dataset):
             valid_mask = (
                 torch.as_tensor(
                     (~np.isnan(data_dict["depth"]) & (data_dict["conf"] == 2))
-                    & (data_dict["depth"] < 3.0)
+                    #& (data_dict["depth"] < 3.0) #& (data_dict["depth"] > 0.1))
                 )
                 .squeeze(0)
                 .bool()
