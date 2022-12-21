@@ -20,7 +20,7 @@ cd clip-fields
 # Create conda environment and install the dependencies.
 conda create -n cf python=3.8
 conda activate cf
-conda install -y pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch-lts -c nvidia
+conda install pytorch==1.12.0 torchvision==0.13.0 torchaudio==0.12.0 cudatoolkit=11.3 -c pytorch
 pip install -r requirements.txt
 
 # Install the hashgrid encoder with the relevant cuda module.
