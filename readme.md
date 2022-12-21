@@ -14,7 +14,7 @@ To properly install this repo and all the dependencies, follow these instruction
 
 ```
 # Clone this repo.
-git clone --recursive https://github.com/notmahi/clip-fields
+git clone --recursive https://github.com/matsuolab/hsr-clip-fields
 cd clip-fields
 
 # Create conda environment and install the dependencies.
