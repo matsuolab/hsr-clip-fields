@@ -260,18 +260,33 @@ class DeticDenseLabelledDataset(Dataset):
                     instance.scores.cpu(),
                     instance.features.cpu(),
                 ):
+                    # valid_mask=torch.ones_like(valid_mask).bool()
                     real_mask = pred_mask[valid_mask]
                     real_mask_rect = valid_mask & pred_mask
+                    real_mask = real_mask_rect.flatten()
                     # Go over each instance and add it to the DB.
+                    print(valid_mask.sum())
+                    print(pred_mask.sum())
+                    print(real_mask.sum())
+                    print(valid_mask.shape)
+                    print(pred_mask.shape)
                     print(real_mask.shape)
                     print(reshaped_coordinates.shape)
-                    total_points = len(reshaped_coordinates[real_mask])
-                    resampled_indices = torch.rand(total_points) < self._subsample_prob
+                    print(reshaped_coordinates[real_mask].shape)
+                    # もしreshaped_coordinates[real_mask]（shapeは(hoge, 3))のaxis=1にnanがあったら、その行を削除する
+                    # ただし、reshaped_coordinates[real_mask]のshapeは(hoge, 3)のまま
+                    tmp_mask =~torch.isnan(reshaped_coordinates[real_mask]).any(axis=1)
+                    valid_coordinates = reshaped_coordinates[real_mask][tmp_mask]
+                    print(valid_coordinates.shape)
+                    # total_points = len(reshaped_coordinates[real_mask]) #(hoge, 3)のhoge
+                    total_points = len(valid_coordinates) #(hoge, 3)のhoge
+                    resampled_indices = torch.rand(total_points) < self._subsample_prob  #torch.Size([hoge])
                     self._label_xyz.append(
-                        reshaped_coordinates[real_mask][resampled_indices]
+                        # reshaped_coordinates[real_mask][resampled_indices]
+                        valid_coordinates[resampled_indices]
                     )
                     self._label_rgb.append(
-                        reshaped_rgb[real_mask_rect][resampled_indices]
+                        reshaped_rgb[real_mask_rect][tmp_mask][resampled_indices]
                     )
                     self._text_ids.append(
                         torch.ones(total_points)[resampled_indices]
