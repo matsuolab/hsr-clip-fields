@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch
 
 
 def mlp(
@@ -46,7 +47,17 @@ def weight_init(m):
         if hasattr(m.bias, "data"):
             m.bias.data.fill_(0.0)
 
-
+def load_weights_for_mlp(model, path):
+    # keyを"_post_grid."があればそれを””に書き換える
+    saved_state_dict = torch.load(path)["model"]
+    new_state_dict = {}
+    for key in saved_state_dict.keys():
+        if "_post_grid." in key:
+            new_state_dict[key.replace("_post_grid.", "")] = saved_state_dict[key]
+        else:
+            new_state_dict[key] = saved_state_dict[key]
+    model.load_state_dict(new_state_dict)
+   
 class MLP(nn.Module):
     def __init__(
         self,
@@ -56,7 +67,9 @@ class MLP(nn.Module):
         hidden_depth,
         output_mod=None,
         batchnorm=False,
-        activation=nn.ReLU,
+        activation=nn.ReLU, 
+        use_trained_model=False,
+        trained_model_path=None,
     ):
         super().__init__()
         self.trunk = mlp(
@@ -68,7 +81,10 @@ class MLP(nn.Module):
             batchnorm=batchnorm,
             activation=activation,
         )
-        self.apply(weight_init)
+        if use_trained_model:
+            load_weights_for_mlp(self.trunk, trained_model_path)
+        else:
+            self.apply(weight_init)
 
     def forward(self, x):
         return self.trunk(x)

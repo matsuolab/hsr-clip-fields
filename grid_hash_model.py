@@ -24,6 +24,8 @@ class GridCLIPModel(nn.Module):
         image_rep_size: int = 512,
         text_rep_size: int = 512,
         bounds: float = 10.0,
+        use_trained_model: bool = False,
+        use_model_weight_path: str = "",
     ):
         super().__init__()
 
@@ -37,6 +39,8 @@ class GridCLIPModel(nn.Module):
             desired_resolution=None,
             gridtype="hash",
             align_corners=False,
+            use_trained_model=False,
+            trained_model_path=use_model_weight_path,
         )
         # Now convert the output with an MLP
         self._post_grid = MLP(
@@ -45,11 +49,16 @@ class GridCLIPModel(nn.Module):
             hidden_depth=mlp_depth,
             output_dim=image_rep_size + text_rep_size,
             batchnorm=batchnorm,
+            use_trained_model=False,
+            trained_model_path=use_model_weight_path,
         )
         # Mini MLP for extra storage for image loss
         self._image_head = nn.Identity()
         # Magic value adviced by @imisra
-        self.temperature = nn.Parameter(torch.log(torch.tensor(1.0 / 0.07)))
+        if not use_trained_model:
+            self.temperature = nn.Parameter(torch.log(torch.tensor(1.0 / 0.07)))
+        else:
+            self.temperature = nn.Parameter(torch.load(use_model_weight_path)["model"]["temperature"])
 
         self._image_rep_size = image_rep_size
         self._text_rep_size = text_rep_size

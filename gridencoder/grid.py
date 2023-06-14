@@ -151,6 +151,8 @@ class GridEncoder(nn.Module):
         desired_resolution=None,
         gridtype="hash",
         align_corners=False,
+        use_trained_model=False,
+        trained_model_path=None,
     ):
         super().__init__()
 
@@ -173,29 +175,38 @@ class GridEncoder(nn.Module):
         self.gridtype_id = _gridtype_to_id[gridtype]  # "tiled" or "hash"
         self.align_corners = align_corners
 
-        # allocate parameters
-        offsets = []
-        offset = 0
-        self.max_params = 2 ** log2_hashmap_size
-        for i in range(num_levels):
-            resolution = int(np.ceil(base_resolution * per_level_scale ** i))
-            params_in_level = min(
-                self.max_params,
-                (resolution if align_corners else resolution + 1) ** input_dim,
-            )  # limit max number
-            params_in_level = int(np.ceil(params_in_level / 8) * 8)  # make divisible
+        # allocate parameters if not using trained model
+        if not use_trained_model:
+            offsets = []
+            offset = 0
+            self.max_params = 2 ** log2_hashmap_size
+            for i in range(num_levels):
+                resolution = int(np.ceil(base_resolution * per_level_scale ** i))
+                params_in_level = min(
+                    self.max_params,
+                    (resolution if align_corners else resolution + 1) ** input_dim,
+                )  # limit max number
+                params_in_level = int(np.ceil(params_in_level / 8) * 8)  # make divisible
+                offsets.append(offset)
+                offset += params_in_level
             offsets.append(offset)
-            offset += params_in_level
-        offsets.append(offset)
-        offsets = torch.from_numpy(np.array(offsets, dtype=np.int32))
-        self.register_buffer("offsets", offsets)
+            offsets = torch.from_numpy(np.array(offsets, dtype=np.int32))
+            self.register_buffer("offsets", offsets)
 
-        self.n_params = offsets[-1] * level_dim
+            self.n_params = offsets[-1] * level_dim
 
-        # parameters
-        self.embeddings = nn.Parameter(torch.empty(offset, level_dim))
+            # parameters
+            self.embeddings = nn.Parameter(torch.empty(offset, level_dim))
 
-        self.reset_parameters()
+            self.reset_parameters()
+
+        # load trained model
+        else:
+            self.embeddings = nn.Parameter(torch.load(trained_model_path)["model"]["_grid_model.embeddings"])
+            self.offsets = nn.Parameter(torch.load(trained_model_path)["model"]["_grid_model.offsets"])
+            # 重みを固定
+            self.embeddings.requires_grad = False
+            self.offsets.requires_grad = False
 
     def reset_parameters(self):
         std = 1e-4
