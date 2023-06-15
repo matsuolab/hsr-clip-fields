@@ -83,6 +83,9 @@ class MLP(nn.Module):
         )
         if use_trained_model:
             load_weights_for_mlp(self.trunk, trained_model_path)
+            # requires_grad Trueにする
+            for param in self.trunk.parameters():
+                param.requires_grad = True
         else:
             self.apply(weight_init)
 
