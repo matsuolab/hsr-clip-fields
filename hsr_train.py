@@ -109,15 +109,57 @@ CUSTOM_LABELS = [
     "cereal box",
 ]
 
-# if hsr
+TAG = "gpsr"
+class ReplaceDataset():
+# "/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/init"のデータのうちオドメトリが/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/collect"の各データに対応するものとそれぞれ置き換える
+    def replace_dataset():
+        if not os.path.exists("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/collect"):
+            return False
+        start_time = time.time()
+        # "/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/collect/"以下に含まれるデータの数を数える
+        collect_num = len(glob.glob("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/collect/image*.npy"))
+        # "/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/gpsr/"以下に含まれるデータの数を数える
+        init_num = len(glob.glob("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/gpsr/image*.npy"))
+        
+        exchange_idices = []
+        for idx in range(min(collect_num, int(init_num/5))):
+            # "/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/collect/"のodomに最も近い"/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/gpsr/"のodomを探す
+
+            # "/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/collect/"のodomを取得
+            collect_odom = np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/collect/odom"+str(idx).zfill(3)+".npy")
+
+            # "/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/collect/"のodomと"/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/gpsr/"のodomの差を計算
+            diff = [np.linalg.norm(collect_odom - np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/gpsr/odom"+str(i).zfill(3)+".npy"), axis=1) for i in range(init_num)]
+            # "/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/collect/"のodomに最も近い"/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/gpsr/"のodomのインデックスを取得
+            # diff を値が小さい順に並び替える
+            sorted_diff = np.argsort(diff)
+            for exchange_idx in sorted_diff:
+                if exchange_idx not in exchange_idices:
+                    exchange_idices.append(exchange_idx)
+                    break
+
+        for idx in range(len(exchange_idices)):
+
+            image = np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/collect/image"+str(idx).zfill(3)+".npy")
+            depth = np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/collect/depth"+str(idx).zfill(3)+".npy")
+            world = np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/collect/world"+str(idx).zfill(3)+".npy")
+            odom = np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/collect/odom"+str(idx).zfill(3)+".npy")
+
+            np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/gpsr/image"+str(exchange_idices[idx]).zfill(3)+".npy", image)
+            np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/gpsr/depth"+str(exchange_idices[idx]).zfill(3)+".npy", depth)
+            np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/gpsr/world"+str(exchange_idices[idx]).zfill(3)+".npy", world)
+            np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/gpsr/odom"+str(exchange_idices[idx]).zfill(3)+".npy", odom)
+
+        print("time for replace: ", time.time() - start_time)
+        return True
+
 class MyDataset(Dataset):
     
     def __init__(self, custom_classes: Optional[List[str]] = CLASS_LABELS_200):
-        self.tag = "test"
         self.image_lis, self.depth_lis, self.world_lis, self.conf_lis = [], [], [], []
-        num = len(glob.glob("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ self.tag +"/image*.npy"))
+        num = len(glob.glob("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ TAG +"/image*.npy"))
         self.num = num
-        image = np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ self.tag +'/image000.npy')
+        image = np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ TAG +'/image000.npy')
         self.image_size = (image.shape[1], image.shape[0])
         if custom_classes:
             self._classes = custom_classes
@@ -129,8 +171,8 @@ class MyDataset(Dataset):
         for i in range(self.num):
             num = '000' + str(i)
             num = num[-3:]
-            image = np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ self.tag +'/image'+num+'.npy').astype(np.uint8)
-            depth = (np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ self.tag +'/depth'+num+'.npy')*0.001).astype(np.float32)
+            image = np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ TAG +'/image'+num+'.npy').astype(np.uint8)
+            depth = (np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ TAG +'/depth'+num+'.npy')*0.001).astype(np.float32)
             mask = ~np.isnan(depth) #& (depth < 3.0)
             self.image_lis.append(image)
             self.depth_lis.append(depth)
@@ -138,7 +180,7 @@ class MyDataset(Dataset):
 
             #depth = depth[mask]
             # depth = cv2.convertScaleAbs(np.load('../data/depth'+num+'.npy')).astype(np.uint8)
-            world = np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ self.tag +'/world'+num+'.npy').reshape(-1, 3).astype(np.float64)
+            world = np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ TAG +'/world'+num+'.npy').reshape(-1, 3).astype(np.float64)
             self.world_lis.append(world)
 
     def __len__(self):
@@ -164,6 +206,7 @@ class ClipFieldsTrainer:
 
     def make_dataset(self) -> None:
         start_time = time.time()
+        ReplaceDataset().replace_dataset()
         dataset = MyDataset()
         dataloader = DataLoader(dataset, batch_size=1, shuffle=False, pin_memory=False)
 
@@ -185,11 +228,11 @@ class ClipFieldsTrainer:
             # visualization_path="detic_labelled_results_living_add-table",
         )
 
-        torch.save(labelled_dataset, "/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/detic_labeled_dataset_hsr_test.pt")
+        torch.save(labelled_dataset, "/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/detic_labeled_dataset_hsr.pt")
 
         # Load the data and create the dataloader created in the previous tutorial notebook
 
-        training_data = torch.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/detic_labeled_dataset_hsr_test.pt")
+        training_data = torch.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/detic_labeled_dataset_hsr.pt")
         # training_data = torch.load("../detic_labeled_dataset_living_add-table.pt")
         max_coords, _ = training_data._label_xyz.max(dim=0)
         min_coords, _ = training_data._label_xyz.min(dim=0)
@@ -448,7 +491,7 @@ class ClipFieldsTrainer:
         }
         torch.save(
             state_dict,
-            f"{save_directory}/implicit_scene_label_model_latest_hsr_test.pt",
+            f"{save_directory}/implicit_scene_label_model_latest_hsr.pt",
             # f"{save_directory}/implicit_scene_label_model_latest_living_add-table.pt",
         )
         return 0

@@ -10,6 +10,8 @@ import std_msgs
 import os
 from geometry_msgs.msg import PoseStamped
 
+TAG = "gpsr"
+
 INTRINSICS = {
     'realsense': [607.3814086914062, 0.0, 315.9123840332031, 0.0, 607.2514038085938, 233.77308654785156, 0.0, 0.0, 1.0],
     'xtion': [537.4933389299223, 0.0, 319.9746375212718, 0.0, 536.5961755975517, 244.54846607953, 0.0, 0.0, 1.0],
@@ -92,19 +94,19 @@ class DataCollector:
         odom = np.array(self.pose_stamped)
         num = "000"+str(num)
         num = num[-3:]
-        np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/data/"+ self.tag + "/image" + num +".npy", image)
-        np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/data/"+ self.tag + "/depth" + num +".npy", depth)
-        np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/data/"+ self.tag + "/world" + num +".npy", world)
-        np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/data/"+ self.tag + "/odom" + num +".npy", odom)
+        np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/data/"+ TAG + "/image" + num +".npy", image)
+        np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/data/"+ TAG + "/depth" + num +".npy", depth)
+        np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/data/"+ TAG + "/world" + num +".npy", world)
+        np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/data/"+ TAG + "/odom" + num +".npy", odom)
 
 
     def main(self):
         # ctrlC と入力するまでデータを10hzで取り続ける
-        self.tag = input("タグを入力してください!")
-        if os.path.isdir("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/" + self.tag):
+        # TAG = input("タグを入力してください!")
+        if os.path.isdir("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/" + TAG):
             print("そのタグは既に存在します")
             return
-        os.mkdir("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/" + self.tag)
+        os.mkdir("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/" + TAG)
             
         while True:
             key = input("sを押すとデータ取得を開始します, qを押すと終了します")
