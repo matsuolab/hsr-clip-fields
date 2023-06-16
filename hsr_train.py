@@ -53,7 +53,7 @@ from dataloaders import DeticDenseLabelledDataset4HSR
 import clip
 from sentence_transformers import SentenceTransformer
 import time
-
+import glob
 
 # Set up the constants
 
@@ -112,9 +112,10 @@ CUSTOM_LABELS = [
 # if hsr
 class MyDataset(Dataset):
     
-    def __init__(self, num, custom_classes: Optional[List[str]] = CLASS_LABELS_200):
+    def __init__(self, custom_classes: Optional[List[str]] = CLASS_LABELS_200):
         self.tag = "test"
         self.image_lis, self.depth_lis, self.world_lis, self.conf_lis = [], [], [], []
+        num = len(glob.glob("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ self.tag +"/image*.npy"))
         self.num = num
         image = np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ self.tag +'/image000.npy')
         self.image_size = (image.shape[1], image.shape[0])
@@ -125,7 +126,7 @@ class MyDataset(Dataset):
             
         self._id_to_name = {i: x for (i, x) in enumerate(self._classes)}
         
-        for i in range(self.num+1):
+        for i in range(self.num):
             num = '000' + str(i)
             num = num[-3:]
             image = np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ self.tag +'/image'+num+'.npy').astype(np.uint8)
@@ -163,7 +164,7 @@ class ClipFieldsTrainer:
 
     def make_dataset(self) -> None:
         start_time = time.time()
-        dataset = MyDataset(27)
+        dataset = MyDataset()
         dataloader = DataLoader(dataset, batch_size=1, shuffle=False, pin_memory=False)
 
         for idx, data_dict in tqdm.tqdm(enumerate(dataloader), total=len(dataset), desc="Calculating Detic features"):
