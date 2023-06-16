@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 import open3d as o3d
 import numpy as np
 import matplotlib.pyplot as plt
@@ -33,7 +33,7 @@ class ClipFields:
     def __init__(self):
         self.model, preprocess = clip.load("ViT-B/32", device=DEVICE)
         self.sentence_model = SentenceTransformer("all-mpnet-base-v2")
-        self.training_data = torch.load("./detic_labeled_dataset_living_add-table.pt")
+        self.training_data = torch.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/detic_labeled_dataset_hsr_test.pt")
         max_coords, _ = self.training_data._label_xyz.max(dim=0)
         min_coords, _ = self.training_data._label_xyz.min(dim=0)
         print(max_coords)
@@ -50,7 +50,7 @@ class ClipFields:
             min_coords=min_coords,
         ).to(DEVICE)
 
-        model_weights_path = "./clip_implicit_model/implicit_scene_label_model_latest_living_add-table.pt"
+        model_weights_path = "/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/clip_implicit_model/implicit_scene_label_model_latest_hsr_test.pt"
         model_weights = torch.load(model_weights_path, map_location=DEVICE)
         self.label_model.load_state_dict(model_weights["model"])
         print(self.label_model)

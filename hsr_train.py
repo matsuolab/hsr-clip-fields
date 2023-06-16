@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 import json
 from pathlib import Path
 from typing import List, Optional
@@ -57,7 +57,7 @@ import time
 
 # Set up the constants
 
-SAVE_DIRECTORY = "./clip_implicit_model"
+SAVE_DIRECTORY = "/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/clip_implicit_model"
 DEVICE = "cuda"
 IMAGE_TO_LABEL_CLIP_LOSS_SCALE = 1.0
 LABEL_TO_IMAGE_LOSS_SCALE = 1.0
@@ -74,7 +74,7 @@ CLIP_MODEL_NAME = "ViT-B/32"
 SBERT_MODEL_NAME = "all-mpnet-base-v2"
 
 # TODO: Replace with your own path.
-DATA_PATH = './data/clip_fields_add_table.r3d'
+DATA_PATH = '/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/clip_fields_add_table.r3d'
 
 CUSTOM_LABELS = [
     "dining table",
@@ -113,9 +113,10 @@ CUSTOM_LABELS = [
 class MyDataset(Dataset):
     
     def __init__(self, num, custom_classes: Optional[List[str]] = CLASS_LABELS_200):
+        self.tag = "test"
         self.image_lis, self.depth_lis, self.world_lis, self.conf_lis = [], [], [], []
         self.num = num
-        image = np.load('./data/image000.npy')
+        image = np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ self.tag +'/image000.npy')
         self.image_size = (image.shape[1], image.shape[0])
         if custom_classes:
             self._classes = custom_classes
@@ -127,8 +128,8 @@ class MyDataset(Dataset):
         for i in range(self.num+1):
             num = '000' + str(i)
             num = num[-3:]
-            image = np.load('./data/image'+num+'.npy').astype(np.uint8)
-            depth = (np.load('./data/depth'+num+'.npy')*0.001).astype(np.float32)
+            image = np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ self.tag +'/image'+num+'.npy').astype(np.uint8)
+            depth = (np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ self.tag +'/depth'+num+'.npy')*0.001).astype(np.float32)
             mask = ~np.isnan(depth) #& (depth < 3.0)
             self.image_lis.append(image)
             self.depth_lis.append(depth)
@@ -136,7 +137,7 @@ class MyDataset(Dataset):
 
             #depth = depth[mask]
             # depth = cv2.convertScaleAbs(np.load('../data/depth'+num+'.npy')).astype(np.uint8)
-            world = np.load('./data/world'+num+'.npy').reshape(-1, 3).astype(np.float64)
+            world = np.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ self.tag +'/world'+num+'.npy').reshape(-1, 3).astype(np.float64)
             self.world_lis.append(world)
 
     def __len__(self):
@@ -162,7 +163,7 @@ class ClipFieldsTrainer:
 
     def make_dataset(self) -> None:
         start_time = time.time()
-        dataset = MyDataset(48)
+        dataset = MyDataset(27)
         dataloader = DataLoader(dataset, batch_size=1, shuffle=False, pin_memory=False)
 
         for idx, data_dict in tqdm.tqdm(enumerate(dataloader), total=len(dataset), desc="Calculating Detic features"):
@@ -183,11 +184,11 @@ class ClipFieldsTrainer:
             # visualization_path="detic_labelled_results_living_add-table",
         )
 
-        torch.save(labelled_dataset, "./detic_labeled_dataset_hsr_test.pt")
+        torch.save(labelled_dataset, "/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/detic_labeled_dataset_hsr_test.pt")
 
         # Load the data and create the dataloader created in the previous tutorial notebook
 
-        training_data = torch.load("./detic_labeled_dataset_hsr_test.pt")
+        training_data = torch.load("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/detic_labeled_dataset_hsr_test.pt")
         # training_data = torch.load("../detic_labeled_dataset_living_add-table.pt")
         max_coords, _ = training_data._label_xyz.max(dim=0)
         min_coords, _ = training_data._label_xyz.min(dim=0)

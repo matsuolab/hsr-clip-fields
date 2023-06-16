@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 import rospy
 import numpy as np
 from sensor_msgs.msg import Image
@@ -92,10 +92,10 @@ class DataCollector:
         odom = np.array(self.pose_stamped)
         num = "000"+str(num)
         num = num[-3:]
-        np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ self.tag + "/image" + num +".npy", image)
-        np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ self.tag + "/depth" + num +".npy", depth)
-        np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ self.tag + "/world" + num +".npy", world)
-        np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/"+ self.tag + "/odom" + num +".npy", odom)
+        np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/data/"+ self.tag + "/image" + num +".npy", image)
+        np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/data/"+ self.tag + "/depth" + num +".npy", depth)
+        np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/data/"+ self.tag + "/world" + num +".npy", world)
+        np.save("/root/catkin_ws/src/ros_docker/hsr_collection/scripts/data/"+ self.tag + "/odom" + num +".npy", odom)
 
 
     def main(self):
