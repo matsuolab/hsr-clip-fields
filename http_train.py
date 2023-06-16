@@ -111,7 +111,7 @@ CUSTOM_LABELS = [
     "cereal box",
 ]
 
-TAG = "gpsr"
+TAG = "test"#"gpsr"
 class ReplaceDataset():
 # "/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/init"のデータのうちオドメトリが/root/catkin_ws/src/ros_docker/hsr_collection/scripts/hsr-clip-fields/data/collect"の各データに対応するものとそれぞれ置き換える
     def replace_dataset(self):
@@ -517,16 +517,16 @@ class ClipFieldsTrainer:
                 self.save(self.label_model, self.optim, epoch_cnt)
         print(f"Total training time: {time.time() - start_time}")
 
-# http server
-# トリガーがあったら学習を開始する
-    @post('/cf_server')
-    def cf_server(self, req):
-        print("cf_server")
-        start_time = time.time()
-        self.make_dataset()
-        self.trainIO(5)
-        print(f"Total time: {time.time() - start_time}")
-        return "cf_server"
+# # http server
+# # トリガーがあったら学習を開始する
+#     @post('/cf_train')
+#     def cf_train(self, req):
+#         print("cf_train")
+#         start_time = time.time()
+#         self.make_dataset()
+#         self.trainIO(5)
+#         print(f"Total time: {time.time() - start_time}")
+#         return "cf_train"
         
 
 
@@ -535,13 +535,13 @@ if __name__ == "__main__":
     # http server
     # トリガーがあったら学習を開始する
     cft = ClipFieldsTrainer()
-    @post('/cf_server')
-    def cf_server():
-        print("cf_server")
+    @post('/cf_train')
+    def cf_train():
+        print("cf_train")
         start_time = time.time()
         cft.make_dataset()
         cft.trainIO(5)
         print(f"Total time: {time.time() - start_time}")
-        return "cf_server"
+        return "cf_train"
     run(host='localhost', port=8080, debug=True)
 
